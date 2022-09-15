@@ -42,7 +42,6 @@ class particle_class():
 		self.sign_y_speed = 0
 		self.impact_pos_x = 0
 		self.impact_pos_y = 0
-		self.impact_speed_summ = 0	#Determine speed after impact
 
 	def position_upd(self):
 		#Calc forces, affecting on a particle
@@ -91,7 +90,6 @@ class particle_class():
 		free_path_list.append(((self.pos_x-self.impact_pos_x)**2+(self.pos_y-self.impact_pos_y)**2)**0.5)
 		self.impact_pos_x = self.pos_x
 		self.impact_pos_y = self.pos_y
-		self.impact_speed_summ += (self.x_speed**2+self.y_speed**2)**0.5
 
 	def check_for_impact(self):
 		#Detect collisions to determine free path
@@ -188,8 +186,6 @@ def calc_av_speed():
 	particle_av_speed = 0
 	for particle in particles_list:
 		particle_av_speed += (particle.x_speed**2+particle.y_speed**2)**0.5
-		# particle_av_speed += particle.impact_speed_summ/len(free_path_list)	#calc sum of average speed of particles
-	# average_velocity = particle_av_speed/(Nparticles_in_column*Nparticles_in_row)	#calc average velocity
 	average_velocity = particle_av_speed/len(particles_list)
 	return average_velocity/scale_multiplier
 
