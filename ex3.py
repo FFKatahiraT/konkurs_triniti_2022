@@ -143,6 +143,8 @@ def find_F(pos_x, pos_y, delta_pos_x, delta_pos_y, opponent_pos_x, opponent_pos_
 	delta_x = abs(pos_x - opponent_pos_x)
 	delta_y = abs(pos_y - opponent_pos_y)
 	r = (delta_x**2+delta_y**2)**0.5
+	if r > r_list[-1]:	#If particles are far away, dont need to calc forces
+		return 0, 0
 	r_delta = (delta_pos_x**2+delta_pos_y**2)**0.5
 	delta, delta_prev = 0, -1
 	for i in range(len(r_list)):	#find index of the nearest force value
@@ -185,8 +187,10 @@ def calc_free_path():
 def calc_av_speed():
 	particle_av_speed = 0
 	for particle in particles_list:
-		particle_av_speed += particle.impact_speed_summ/len(free_path_list)	#calc sum of average speed of particles
-	average_velocity = particle_av_speed/(Nparticles_in_column*Nparticles_in_row)	#calc average velocity
+		particle_av_speed += (particle.x_speed**2+particle.y_speed**2)**0.5
+		# particle_av_speed += particle.impact_speed_summ/len(free_path_list)	#calc sum of average speed of particles
+	# average_velocity = particle_av_speed/(Nparticles_in_column*Nparticles_in_row)	#calc average velocity
+	average_velocity = particle_av_speed/len(particles_list)
 	return average_velocity/scale_multiplier
 
 def blit():
@@ -208,9 +212,9 @@ if __name__ == '__main__':
 	pygame.display.set_caption('MD')
 	clock = pygame.time.Clock()
 
-	scale_multiplier = 1
+	scale_multiplier = 0.3
 	force_multiplier = 1
-	time_multiplier = 0.2*10**-10	#affects on time only.
+	time_multiplier = 1e-2*10**-10	#affects on time only.
 	white = (255,255,255)
 	black = (0,0,0)
 	gray = (125,125,125)
@@ -232,9 +236,9 @@ if __name__ == '__main__':
 	free_path_list = []
 
 	r_list, E_list, F_list = particle_force(force_multiplier, scale_multiplier) #Calc particle potential
-	Nparticles_in_row = 3	#for p=1 bar ~11.6 particles needed for 800x600 px area (1 px = 1 A if scale_multiplier=1)
-	Nparticles_in_column = 4
-	init_speed = 13.67*10**10*time_multiplier*scale_multiplier*6
+	Nparticles_in_row = 11	#for p=1 bar ~11.6 particles needed for 800x600 px area (1 px = 1 A if scale_multiplier=1)
+	Nparticles_in_column = 11	#129 particles for 0.3 scale_multiplier
+	init_speed = 432.42*10**10*time_multiplier*scale_multiplier
 	mass = 40
 	for i in range(Nparticles_in_row):
 		for j in range(Nparticles_in_column):
@@ -263,19 +267,17 @@ if __name__ == '__main__':
 		R = 8.31
 		cp = 3/2*R
 		cv = cp/mass
-		c = (3*k*T/mass)**0.5
-		sigma = 10.29*10**-20	#From ex2 [m^2]
+		c = (3*k*T/mass/1.66054e-27)**0.5
 		N_total = Nparticles_in_column*Nparticles_in_row
-		Volume = display_width*display_height*10**-30*scale_multiplier**2
+		Volume = display_width*display_height*10**-30/scale_multiplier**2
 		density = N_total*mass*1.66054e-27/Volume	#amu/A^2 --> *1.66054e-27/10**-30 kg/m^3, should be 1.78 kg/m^3
 		free_path = calc_free_path()*10**-10	#[m] should be 68 nm
-		av_speed = calc_av_speed()/time_multiplier*10**-10 #[m/s] should be 13.67 m/s	
+		av_speed = calc_av_speed()/time_multiplier*10**-10 #[m/s] should be 432.42 m/s	
 		av_free_path_time = free_path/av_speed #[s], 
 		Diffusion = 2/3*free_path*av_speed 	#[m^2/s], should be 2e-5 m^2/s
-		thermal_conductivity = density*cv*Diffusion	#0.0162 W/(m*K)
-		viscosity = density*Diffusion	#should be around 22.7e-6 Pa*s
+		thermal_conductivity = density*cv*Diffusion	#0.0162 W/(m*K) (!)
+		viscosity = density*Diffusion	#should be around 22.7e-6 Pa*s (!)
 		# viscosity = 1/3*free_path*c*density	#should be around 22.7e-6 Pa*s
-		# thermal_conductivity = cp*(3*R*T)**0.5/(2*(2*mass)*0.5*sigma*N_total)	#0.0162 W/(m*K)
 		
 		print('num of collisions', len(free_path_list))
 		print('density', density, '[kg/m^3]')
